@@ -1,0 +1,11 @@
+{
+  "folders": [
+	{
+		"path": "../.."
+	},
+	{
+		"path": "../../../cloud-sdk-capacitor-plugin"
+	}
+],
+  "settings": {}
+}
