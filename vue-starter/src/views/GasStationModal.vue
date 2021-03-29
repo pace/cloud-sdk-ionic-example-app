@@ -1,42 +1,50 @@
 <template>
-  <ion-header>
-    <ion-toolbar>
-      <ion-title>{{ title }}</ion-title>
-    </ion-toolbar>
-  </ion-header>
-  <ion-content class="ion-padding">
-    <div>
-      <span>{{ gasStation.name }}</span>
+  <ion-page>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>{{ title }}</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    <ion-content class="ion-padding">
+      <div>
+        <span>{{ gasStation.name }}</span>
 
-      <ion-button :disabled="!canStartFueling" v-on:click="startFueling">
-      </ion-button>
-    </div>
-  </ion-content>
+        <ion-button :disabled="!canStartFueling" v-on:click="startFueling">
+          Begin met
+        </ion-button>
+      </div>
+    </ion-content>
+  </ion-page>
 </template>
 
-<script>
-import { defineComponent } from "@vue";
+<script lang="ts">
+import { defineComponent, ref, onMounted, PropType } from "vue";
 import { IonHeader, IonToolbar, IonTitle, IonContent } from "@ionic/vue";
 import { Plugins } from "@capacitor/core";
+import { GasStation } from "cloud-sdk-capacitor-plugin";
 
 export default defineComponent({
   name: "GasStationModal",
   props: {
-    title: { type: String, default: "Modal" },
-    gasStation: { type: Object, default: () => {} },
+    title: { type: String, default: "Modal", required: true },
+    gasStation: { type: Object as PropType<GasStation>, required: true },
   },
   components: { IonContent, IonHeader, IonTitle, IonToolbar },
   setup(props) {
     const canStartFueling = ref(false);
-    const { PaceSDK } = Plugins;
+    const { CloudSDK } = Plugins;
 
     /**
      * Checks if the gasStation is nearby enough to initiate the fueling flow
      */
     async function checkGasStationInRange() {
-      const value = await PaceSDK.isPoiInRange(props.id);
+      try {
+        const { result } = await CloudSDK.isPoiInRange(props.gasStation.id);
 
-      canStartFueling.value = value;
+        canStartFueling.value = result;
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     function startFueling() {
@@ -44,7 +52,7 @@ export default defineComponent({
         // @todo show error that gasStation is not nearby
       }
 
-      PaceSDK.startApp(); // with which url?
+      CloudSDK.startFuelingApp(props.gasStation.id);
     }
 
     onMounted(() => {
@@ -52,7 +60,7 @@ export default defineComponent({
     });
 
     return {
-      openGasStationApp,
+      canStartFueling,
       startFueling,
     };
   },

@@ -12,7 +12,14 @@
         </ion-toolbar>
       </ion-header>
 
-      <ion-list>
+      <ion-button
+        v-if="!isLocationPermitted"
+        v-on:click="requestLocationPermission"
+      >
+        Get Location
+      </ion-button>
+
+      <ion-list v-if="gasStations.length > 0">
         <ion-item v-bind:for="(gasStation, index) in gasStations">
           <ion-label v-on:click="openGasStationModal(gasStation)">{{
             gasStation.brand
@@ -35,8 +42,9 @@ import {
   modalController,
 } from "@ionic/vue";
 import { Plugins } from "@capacitor/core";
-import { onMounted, reactive } from "vue";
+import { onMounted, reactive, ref } from "vue";
 import GasStationModal from "./GasStationModal.vue";
+import { GasStation } from "cloud-sdk-capacitor-plugin";
 
 export default {
   name: "List",
@@ -51,13 +59,26 @@ export default {
   },
 
   setup() {
-    const { PaceSDK } = Plugins;
+    const { CloudSDK, Geolocation } = Plugins;
+
+    const isLocationPermitted = ref(false);
     const gasStations = reactive<Map<string, GasStation>>(new Map());
+
+    async function getGasStations() {
+      try {
+        const { results } = await CloudSDK.listAvailableCoFuStations();
+
+        results.forEach((result) => {
+          gasStations.set(result.id, result);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
 
     async function openGasStationModal(gasStation: GasStation) {
       const modal = await modalController.create({
         component: GasStationModal,
-        cssClass: "my-custom-class",
         componentProps: {
           title: `${gasStation.brand} - Details`,
           gasStation,
@@ -67,19 +88,24 @@ export default {
       return modal.present();
     }
 
-    onMounted(async () => {
+    async function requestLocationPermission() {
       try {
-        const results = await PaceSDK.listAvailableCoFuStations();
+        await Geolocation.getCurrentPosition();
 
-        results.forEach((result) => {
-          gasStations.set(result.id, result);
-        });
+        isLocationPermitted.value = true;
+
+        getGasStations();
       } catch (err) {
         console.error(err);
       }
+    }
+
+    onMounted(() => {
+      requestLocationPermission();
     });
 
     return {
+      isLocationPermitted,
       gasStations,
       openGasStationModal,
     };

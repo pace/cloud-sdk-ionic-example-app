@@ -23,15 +23,23 @@ import "@ionic/vue/css/display.css";
 /* Theme variables */
 import "./theme/variables.css";
 
-const { PaceSDK } = Plugins;
+const { CloudSDK } = Plugins;
 
 function initializeApp() {
   return new Promise<void>((resolve) => {
-    PaceSDK.setup(process.env.VUE_APP_PACE_SDK_API_KEY).then(() => {
-      // Any additional configuration logic can be performed here
+    const config = {
+      apiKey: process.env.VUE_APP_CLOUD_SDK_API_KEY,
+    };
 
-      resolve();
-    });
+    CloudSDK.setup(config)
+      .then(() => {
+        // Any additional configuration logic can be performed here
+      })
+      .catch((err) => {
+        console.error(err);
+      })
+
+      .finally(resolve);
   });
 }
 
