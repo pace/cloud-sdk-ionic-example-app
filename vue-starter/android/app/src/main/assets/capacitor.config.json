@@ -1,5 +1,5 @@
 {
-  "appId": "io.ionic.starter",
+  "appId": "cloud.pace.ionic-vue-starter",
   "appName": "vue-starter",
   "bundledWebRuntime": false,
   "npmClient": "npm",

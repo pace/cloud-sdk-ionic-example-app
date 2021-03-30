@@ -12,17 +12,16 @@
         </ion-toolbar>
       </ion-header>
 
-      <ion-button
-        v-if="!isLocationPermitted"
-        v-on:click="requestLocationPermission"
-      >
-        Get Location
-      </ion-button>
+      <p class="ion-padding-start ion-padding-end">
+        <ion-button v-on:click="getUserPosition()" expand="block" fill="outline"
+          >Refresh</ion-button
+        >
+      </p>
 
       <ion-list v-if="gasStations.length > 0">
         <ion-item v-bind:for="(gasStation, index) in gasStations">
-          <ion-label v-on:click="openGasStationModal(gasStation)">{{
-            gasStation.brand
+          <ion-label v-on:click="openDetailsModal(gasStation)">{{
+            gasStation.name
           }}</ion-label>
         </ion-item>
       </ion-list>
@@ -39,10 +38,12 @@ import {
   IonContent,
   IonList,
   IonItem,
+  IonLabel,
+  IonButton,
   modalController,
 } from "@ionic/vue";
-import { Plugins } from "@capacitor/core";
-import { onMounted, reactive, ref } from "vue";
+import { Plugins, GeolocationPosition } from "@capacitor/core";
+import { onMounted, reactive, ref, watch } from "vue";
 import GasStationModal from "./GasStationModal.vue";
 import { GasStation } from "cloud-sdk-capacitor-plugin";
 
@@ -56,31 +57,22 @@ export default {
     IonPage,
     IonList,
     IonItem,
+    IonLabel,
+    IonButton,
   },
 
   setup() {
     const { CloudSDK, Geolocation } = Plugins;
 
-    const isLocationPermitted = ref(false);
+    const position = ref<GeolocationPosition>();
+
     const gasStations = reactive<Map<string, GasStation>>(new Map());
 
-    async function getGasStations() {
-      try {
-        const { results } = await CloudSDK.listAvailableCoFuStations();
-
-        results.forEach((result) => {
-          gasStations.set(result.id, result);
-        });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    async function openGasStationModal(gasStation: GasStation) {
+    async function openDetailsModal(gasStation: GasStation) {
       const modal = await modalController.create({
         component: GasStationModal,
         componentProps: {
-          title: `${gasStation.brand} - Details`,
+          title: `${gasStation.name} - Details`,
           gasStation,
         },
       });
@@ -88,26 +80,42 @@ export default {
       return modal.present();
     }
 
-    async function requestLocationPermission() {
+    async function getUserPosition() {
       try {
-        await Geolocation.getCurrentPosition();
-
-        isLocationPermitted.value = true;
-
-        getGasStations();
+        const response = await Geolocation.getCurrentPosition();
+        position.value = response;
       } catch (err) {
         console.error(err);
       }
     }
 
     onMounted(() => {
-      requestLocationPermission();
+      getUserPosition();
+    });
+
+    watch(position, async (value) => {
+      if (!value) return;
+
+      const { coords } = value;
+
+      try {
+        const { results } = await CloudSDK.getNearbyGasStations(
+          [coords.latitude, coords.longitude],
+          30
+        );
+
+        results.forEach((result) => {
+          gasStations.set(result.id, result);
+        });
+      } catch (err) {
+        console.error(err);
+      }
     });
 
     return {
-      isLocationPermitted,
+      getUserPosition,
       gasStations,
-      openGasStationModal,
+      openDetailsModal,
     };
   },
 };

@@ -1,4 +1,4 @@
-package io.ionic.starter;
+package cloud.pace.ionic-vue-starter;
 
 import android.os.Bundle;
 

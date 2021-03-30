@@ -1,8 +1,8 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
-import { Plugins } from "@capacitor/core";
 import { IonicVue } from "@ionic/vue";
+import mapboxgl from "mapbox-gl";
 
 /* Core CSS required for Ionic components to work properly */
 import "@ionic/vue/css/core.css";
@@ -23,34 +23,15 @@ import "@ionic/vue/css/display.css";
 /* Theme variables */
 import "./theme/variables.css";
 
-const { CloudSDK } = Plugins;
+/* Plugins */
+import "mapbox-gl/dist/mapbox-gl.css";
 
-function initializeApp() {
-  return new Promise<void>((resolve) => {
-    const config = {
-      apiKey: process.env.VUE_APP_CLOUD_SDK_API_KEY,
-    };
+mapboxgl.accessToken = process.env.VUE_APP_MAPBOX_API_KEY;
 
-    CloudSDK.setup(config)
-      .then(() => {
-        // Any additional configuration logic can be performed here
-      })
-      .catch((err) => {
-        console.error(err);
-      })
+const app = createApp(App)
+  .use(IonicVue)
+  .use(router);
 
-      .finally(resolve);
-  });
-}
-
-const app = createApp(App);
-
-initializeApp()
-  .then(() => {
-    app.use(IonicVue).use(router);
-
-    return router.isReady();
-  })
-  .then(() => {
-    app.mount("#app");
-  });
+router.isReady().then(() => {
+  app.mount("#app");
+});
