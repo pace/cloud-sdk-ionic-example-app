@@ -221,10 +221,10 @@ export default {
         const coords = LngLat.convert(value);
 
         const { results } = await CloudSDK.getNearbyGasStations({
-          coordinate: [coords.lat, coords.lng],
+          coordinate: [coords.lng, coords.lat],
 
           // @todo make radius dependent on current bounding box
-          radius: 250,
+          radius: 250000,
         });
 
         results.forEach((result) => {

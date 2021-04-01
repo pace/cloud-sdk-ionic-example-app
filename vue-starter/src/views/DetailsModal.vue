@@ -19,7 +19,13 @@
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, PropType } from "vue";
-import { IonHeader, IonToolbar, IonTitle, IonContent } from "@ionic/vue";
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  alertController,
+} from "@ionic/vue";
 import { Plugins } from "@capacitor/core";
 import { GasStation } from "cloud-sdk-capacitor-plugin";
 
@@ -49,9 +55,14 @@ export default defineComponent({
       }
     }
 
-    function startFueling() {
+    async function startFueling() {
       if (!canStartFueling.value) {
-        // @todo show error that gasStation is not nearby
+        const alert = await alertController.create({
+          header: "Not close enough",
+          message: "You need to move closer to the pump to start fueling",
+          buttons: ["Ok"],
+        });
+        return alert.present();
       }
 
       CloudSDK.startFuelingApp({ poiId: props.gasStation.id });

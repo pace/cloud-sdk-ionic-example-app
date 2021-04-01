@@ -100,8 +100,8 @@ export default {
 
       try {
         const { results } = await CloudSDK.getNearbyGasStations({
-          coordinate: [coords.latitude, coords.longitude],
-          radius: 250,
+          coordinate: [coords.longitude, coords.latitude],
+          radius: 250000,
         });
 
         results.forEach((result) => {
