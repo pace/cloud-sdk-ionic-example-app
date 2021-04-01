@@ -24,7 +24,7 @@ import { Plugins } from "@capacitor/core";
 import { GasStation } from "cloud-sdk-capacitor-plugin";
 
 export default defineComponent({
-  name: "GasStationModal",
+  name: "DetailsModal",
   props: {
     title: { type: String, default: "Modal", required: true },
     gasStation: { type: Object as PropType<GasStation>, required: true },
@@ -39,7 +39,9 @@ export default defineComponent({
      */
     async function checkGasStationInRange() {
       try {
-        const { result } = await CloudSDK.isPoiInRange(props.gasStation.id);
+        const { result } = await CloudSDK.isPoiInRange({
+          poiId: props.gasStation.id,
+        });
 
         canStartFueling.value = result;
       } catch (err) {
@@ -52,7 +54,7 @@ export default defineComponent({
         // @todo show error that gasStation is not nearby
       }
 
-      CloudSDK.startFuelingApp(props.gasStation.id);
+      CloudSDK.startFuelingApp({ poiId: props.gasStation.id });
     }
 
     onMounted(() => {

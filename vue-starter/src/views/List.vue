@@ -44,7 +44,7 @@ import {
 } from "@ionic/vue";
 import { Plugins, GeolocationPosition } from "@capacitor/core";
 import { onMounted, reactive, ref, watch } from "vue";
-import GasStationModal from "./GasStationModal.vue";
+import DetailsModal from "./DetailsModal.vue";
 import { GasStation } from "cloud-sdk-capacitor-plugin";
 
 export default {
@@ -70,7 +70,7 @@ export default {
 
     async function openDetailsModal(gasStation: GasStation) {
       const modal = await modalController.create({
-        component: GasStationModal,
+        component: DetailsModal,
         componentProps: {
           title: `${gasStation.name} - Details`,
           gasStation,
@@ -99,10 +99,10 @@ export default {
       const { coords } = value;
 
       try {
-        const { results } = await CloudSDK.getNearbyGasStations(
-          [coords.latitude, coords.longitude],
-          30
-        );
+        const { results } = await CloudSDK.getNearbyGasStations({
+          coordinate: [coords.latitude, coords.longitude],
+          radius: 250,
+        });
 
         results.forEach((result) => {
           gasStations.set(result.id, result);

@@ -7,11 +7,17 @@
 </template>
 
 <script lang="ts">
-import { IonPage, IonContent, loadingController } from "@ionic/vue";
+import {
+  IonPage,
+  IonContent,
+  loadingController,
+  modalController,
+} from "@ionic/vue";
 import { onMounted, reactive, ref, watch } from "vue";
 import mapboxgl, { GeoJSONSource, LngLat, LngLatLike } from "mapbox-gl";
 import { GasStation } from "cloud-sdk-capacitor-plugin";
 import { Plugins } from "@capacitor/core";
+import DetailsModal from "./DetailsModal.vue";
 
 export default {
   name: "Map",
@@ -37,18 +43,27 @@ export default {
 
       const el = document.createElement("div");
 
-      // @todo style marker
+      el.classList.add("marker");
 
       el.innerText = name;
 
       return el;
     }
 
-    const handleMarkerClick = (id: string) => () => {
+    const handleMarkerClick = (id: string) => async () => {
       const gasStation = gasStations.get(id);
 
       if (!gasStation) return;
 
+      const modal = await modalController.create({
+        component: DetailsModal,
+        componentProps: {
+          title: `${gasStation.name} - Details`,
+          gasStation,
+        },
+      });
+
+      return modal.present();
       // @todo open modal
     };
 
@@ -167,8 +182,8 @@ export default {
         style: "mapbox://styles/mapbox/streets-v11",
         center: defaultCenter,
         zoom: 11,
-        minZoom: 9,
-        maxZoom: 14,
+        // minZoom: 9,
+        // maxZoom: 14,
       });
 
       map.value.on("load", async function() {
@@ -177,7 +192,7 @@ export default {
         // Resize the map so it fills the entire screen
         map.value.resize();
 
-        getUserPosition();
+        // getUserPosition();
       });
 
       map.value.on("data", function(e) {
@@ -205,10 +220,12 @@ export default {
       try {
         const coords = LngLat.convert(value);
 
-        const { results } = await CloudSDK.getNearbyGasStations(
-          [coords.lat, coords.lng],
-          30
-        );
+        const { results } = await CloudSDK.getNearbyGasStations({
+          coordinate: [coords.lat, coords.lng],
+
+          // @todo make radius dependent on current bounding box
+          radius: 250,
+        });
 
         results.forEach((result) => {
           gasStations.set(result.id, result);
@@ -254,5 +271,13 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
+}
+
+.marker {
+  display: inline-block;
+  background: #121212;
+  color: #fff;
+  padding: 0.8rem 1.2rem;
+  border-radius: 100%;
 }
 </style>
