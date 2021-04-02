@@ -19,9 +19,22 @@
       </p>
 
       <ion-list v-if="gasStations.length > 0">
-        <ion-item v-bind:for="(gasStation, index) in gasStations">
-          <ion-label v-on:click="openDetailsModal(gasStation)">{{
-            gasStation.name
+        <ion-item
+          v-for="gasStation in gasStations"
+          :key="gasStation.id"
+          button
+          @click="openDetailsModal(gasStation)"
+        >
+          <ion-label>
+            <h2>{{ gasStation.name }}</h2>
+            <p>
+              {{ gasStation.address.street }}
+              {{ gasStation.address.houseNumber }}
+            </p>
+          </ion-label>
+
+          <ion-label slot="end" class="ion-text-end">{{
+            formatDistance(gasStation.coordinates[0])
           }}</ion-label>
         </ion-item>
       </ion-list>
@@ -41,11 +54,14 @@ import {
   IonLabel,
   IonButton,
   modalController,
+  isPlatform,
 } from "@ionic/vue";
-import { Plugins, GeolocationPosition } from "@capacitor/core";
-import { onMounted, reactive, ref, watch } from "vue";
+import { Plugins } from "@capacitor/core";
+import { onMounted, ref, watch } from "vue";
 import DetailsModal from "./DetailsModal.vue";
 import { GasStation } from "cloud-sdk-capacitor-plugin";
+import { mockGasStations } from "../mocks";
+import { haversineDistance } from "../utils/coordinates";
 
 export default {
   name: "List",
@@ -64,15 +80,15 @@ export default {
   setup() {
     const { CloudSDK, Geolocation } = Plugins;
 
-    const position = ref<GeolocationPosition>();
+    const userPosition = ref<[number, number]>();
 
-    const gasStations = reactive<Map<string, GasStation>>(new Map());
+    const gasStations = ref<GasStation[]>([]);
 
     async function openDetailsModal(gasStation: GasStation) {
       const modal = await modalController.create({
         component: DetailsModal,
         componentProps: {
-          title: `${gasStation.name} - Details`,
+          title: gasStation.name,
           gasStation,
         },
       });
@@ -83,39 +99,59 @@ export default {
     async function getUserPosition() {
       try {
         const response = await Geolocation.getCurrentPosition();
-        position.value = response;
+        userPosition.value = [
+          response.coords.longitude,
+          response.coords.latitude,
+        ];
       } catch (err) {
         console.error(err);
+
+        // @note only for demonstration purposes
+        if (!isPlatform("desktop")) return;
+
+        const defaultCenter: [number, number] = [5.886479, 51.000626];
+        userPosition.value = defaultCenter;
       }
     }
 
-    onMounted(() => {
-      getUserPosition();
-    });
+    function formatDistance(coordinate: [number, number]) {
+      if (!userPosition.value) return;
 
-    watch(position, async (value) => {
+      const distance = haversineDistance(userPosition.value, coordinate);
+
+      return `${distance.toFixed()}km`;
+    }
+
+    watch(userPosition, async (value) => {
       if (!value) return;
-
-      const { coords } = value;
 
       try {
         const { results } = await CloudSDK.getNearbyGasStations({
-          coordinate: [coords.longitude, coords.latitude],
-          radius: 250000,
+          coordinate: [value[0], value[1]],
+          radius: 25000,
         });
 
-        results.forEach((result) => {
-          gasStations.set(result.id, result);
-        });
+        gasStations.value = [...results];
       } catch (err) {
         console.error(err);
+
+        // @note since the plugin does not have a web implementation results are mocked
+        if (!isPlatform("desktop")) return;
+
+        const results = mockGasStations([value[0], value[1]]);
+        gasStations.value = [...results];
       }
+    });
+
+    onMounted(() => {
+      getUserPosition();
     });
 
     return {
       getUserPosition,
       gasStations,
       openDetailsModal,
+      formatDistance,
     };
   },
 };

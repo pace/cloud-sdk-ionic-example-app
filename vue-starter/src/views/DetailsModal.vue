@@ -10,7 +10,7 @@
         <span>{{ gasStation.name }}</span>
 
         <ion-button :disabled="!canStartFueling" v-on:click="startFueling">
-          Begin met
+          Start fueling
         </ion-button>
       </div>
     </ion-content>

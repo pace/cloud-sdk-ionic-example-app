@@ -22,4 +22,4 @@ If you made changes to any file in the `src` directory, you need to run `npm run
 
 ## After you updated the `cloud-sdk-capacitor-plugin` dependency
 
-You need to run `npx cap sync` in order to install any changed dependencies. After that, you can run the commands noted above to make an app build and copy the build files to the `ios` or `android` directory.
+You need to run `npx cap sync` in order to install any changed dependencies. After that, you can run the commands noted above to make an app build, and copy the build files to the `ios` or `android` directory.

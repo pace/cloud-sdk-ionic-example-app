@@ -12,12 +12,20 @@ import {
   IonContent,
   loadingController,
   modalController,
+  isPlatform,
 } from "@ionic/vue";
 import { onMounted, reactive, ref, watch } from "vue";
 import mapboxgl, { GeoJSONSource, LngLat, LngLatLike } from "mapbox-gl";
 import { GasStation } from "cloud-sdk-capacitor-plugin";
 import { Plugins } from "@capacitor/core";
 import DetailsModal from "./DetailsModal.vue";
+import { mockGasStations } from "../mocks";
+import { haversineDistance } from "../utils/coordinates";
+
+interface FeatureProps {
+  id: string;
+  name: string;
+}
 
 export default {
   name: "Map",
@@ -28,7 +36,7 @@ export default {
   setup() {
     const { CloudSDK, Geolocation } = Plugins;
 
-    const gasStations = reactive<Map<string, GasStation>>(new Map());
+    const gasStations = ref<GasStation[]>([]);
 
     const map = ref<mapboxgl.Map>();
     const mapCenter = ref<LngLatLike>();
@@ -36,84 +44,85 @@ export default {
 
     const SOURCE_ID = "gasStations";
 
-    const defaultCenter: [number, number] = [5.886479, 51.000626];
+    const defaultCenter: LngLatLike = [5.886479, 51.000626];
 
-    function createMarker(gasStation: GasStation): HTMLDivElement {
-      const { name } = gasStation;
-
+    function createMarker(name: string, distance: number): HTMLDivElement {
       const el = document.createElement("div");
+      const label = `${name} - ${distance.toFixed()}km`;
 
       el.classList.add("marker");
 
-      el.innerText = name;
+      el.innerText = label;
 
       return el;
     }
 
     const handleMarkerClick = (id: string) => async () => {
-      const gasStation = gasStations.get(id);
+      const gasStation = gasStations.value.find(
+        (gasStation) => gasStation.id === id
+      );
 
       if (!gasStation) return;
 
       const modal = await modalController.create({
         component: DetailsModal,
         componentProps: {
-          title: `${gasStation.name} - Details`,
+          title: gasStation.name,
           gasStation,
         },
       });
 
       return modal.present();
-      // @todo open modal
     };
 
     const updateMarkers = () => {
-      if (!map.value) return;
+      if (!map.value || !mapCenter.value) return;
 
       const features = map.value.querySourceFeatures(SOURCE_ID);
-
       if (!features.length) return;
 
       const addedMarkers: Map<string, mapboxgl.Marker> = new Map();
+      const center = LngLat.convert(mapCenter.value);
 
       features.forEach((feature) => {
         const { properties, geometry } = feature;
-
-        // @ts-ignore
-        const { gasStation } = properties;
-        if (!gasStation) return;
-
+        const { id, name } = properties as FeatureProps;
         // @ts-ignore
         const coords = LngLat.convert(geometry.coordinates);
 
-        let marker = markers.get(gasStation.id);
+        let marker = markers.get(id);
 
-        // Remove any existing references
+        // Remove any existing references to prevent duplicate markers
         if (marker && marker.getElement()) {
           marker
             .getElement()
-            .removeEventListener("click", handleMarkerClick(gasStation.id));
+            .removeEventListener("click", handleMarkerClick(id));
 
           marker.remove();
 
-          markers.delete(gasStation.id);
+          markers.delete(id);
         }
 
-        const el = createMarker(gasStation);
+        const distance = haversineDistance(
+          [center.lng, center.lat],
+          [coords.lng, coords.lat]
+        );
+
+        const el = createMarker(name, distance);
 
         marker = new mapboxgl.Marker({
           element: el,
         }).setLngLat(coords);
 
-        el.addEventListener("click", handleMarkerClick(gasStation.id));
+        el.addEventListener("click", handleMarkerClick(id));
 
         if (map.value) marker.addTo(map.value);
 
-        markers.set(gasStation.id, marker);
-        addedMarkers.set(gasStation.id, marker);
+        markers.set(id, marker);
+        addedMarkers.set(id, marker);
       });
 
-      // Remove markers for gasStations we are not rendering
+      // Remove markers that should not be rendered any more
       Array.from(markers.keys()).map((key) => {
         if (!addedMarkers.has(key)) {
           const marker = markers.get(key);
@@ -132,12 +141,9 @@ export default {
     };
 
     function getSourceData(
-      gasStations: Map<string, GasStation>
-    ): GeoJSON.FeatureCollection<GeoJSON.Point, { gasStation: GasStation }> {
-      const data: GeoJSON.FeatureCollection<
-        GeoJSON.Point,
-        { gasStation: GasStation }
-      > = {
+      gasStations: GasStation[]
+    ): GeoJSON.FeatureCollection<GeoJSON.Point, FeatureProps> {
+      const data: GeoJSON.FeatureCollection<GeoJSON.Point, FeatureProps> = {
         type: "FeatureCollection",
         features: [],
       };
@@ -146,7 +152,8 @@ export default {
         data.features.push({
           type: "Feature",
           properties: {
-            gasStation,
+            id: gasStation.id,
+            name: gasStation.name,
           },
           geometry: {
             type: "Point",
@@ -168,6 +175,8 @@ export default {
       } catch (err) {
         console.error(err);
 
+        if (!isPlatform("desktop")) return;
+
         mapCenter.value = defaultCenter;
       }
     }
@@ -182,17 +191,15 @@ export default {
         style: "mapbox://styles/mapbox/streets-v11",
         center: defaultCenter,
         zoom: 11,
-        // minZoom: 9,
-        // maxZoom: 14,
       });
 
-      map.value.on("load", async function() {
+      map.value.on("load", function() {
         if (!map.value) return;
 
         // Resize the map so it fills the entire screen
         map.value.resize();
 
-        // getUserPosition();
+        getUserPosition();
       });
 
       map.value.on("data", function(e) {
@@ -206,47 +213,52 @@ export default {
     });
 
     watch(mapCenter, async (value) => {
-      if (!value) return;
+      if (!value || !map.value) return;
 
-      map.value?.setCenter(value);
+      map.value.setCenter(value);
 
       const loading = await loadingController.create({
         cssClass: "",
         message: "Fetching gasstations...",
       });
 
+      const coords = LngLat.convert(value);
+
       await loading.present();
 
       try {
-        const coords = LngLat.convert(value);
-
         const { results } = await CloudSDK.getNearbyGasStations({
           coordinate: [coords.lng, coords.lat],
 
           // @todo make radius dependent on current bounding box
-          radius: 250000,
+          radius: 25000,
         });
 
-        results.forEach((result) => {
-          gasStations.set(result.id, result);
-        });
-
-        loading.dismiss();
+        gasStations.value = [...results];
       } catch (err) {
         console.error(err);
 
+        if (!isPlatform("desktop")) return;
+
+        // @note only for demonstration purposes
+        const results = mockGasStations([coords.lng, coords.lat]);
+        gasStations.value = [...results];
+      } finally {
         loading.dismiss();
       }
     });
 
     watch(gasStations, (values) => {
-      if (!map.value || !values.size) return;
+      if (!map.value || !values.length) return;
 
-      const sourceData = getSourceData(values);
+      const source = map.value.getSource(SOURCE_ID);
 
-      if (!map.value.isSourceLoaded(SOURCE_ID)) {
+      const data = getSourceData(values);
+
+      if (!source) {
         map.value.addSource(SOURCE_ID, {
           type: "geojson",
+          data,
         });
 
         map.value.addLayer({
@@ -258,13 +270,13 @@ export default {
         return;
       }
 
-      (map.value.getSource(SOURCE_ID) as GeoJSONSource).setData(sourceData);
+      (map.value.getSource(SOURCE_ID) as GeoJSONSource).setData(data);
     });
   },
 };
 </script>
 
-<style scoped>
+<style>
 #map {
   position: fixed;
   top: 0;
@@ -277,7 +289,7 @@ export default {
   display: inline-block;
   background: #121212;
   color: #fff;
-  padding: 0.8rem 1.2rem;
-  border-radius: 100%;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
 }
 </style>
