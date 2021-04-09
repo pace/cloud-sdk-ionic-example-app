@@ -7,11 +7,13 @@
     </ion-header>
     <ion-content class="ion-padding">
       <div>
-        <span>{{ gasStation.name }}</span>
+        {{ `${distance.toFixed()}km` }}
 
-        <ion-button :disabled="!canStartFueling" v-on:click="startFueling">
-          Start fueling
-        </ion-button>
+        <div>
+          <ion-button :disabled="!canStartFueling" v-on:click="startFueling">
+            Start fueling
+          </ion-button>
+        </div>
       </div>
     </ion-content>
   </ion-page>
@@ -20,6 +22,7 @@
 <script lang="ts">
 import { defineComponent, ref, onMounted, PropType } from "vue";
 import {
+  IonPage,
   IonHeader,
   IonToolbar,
   IonTitle,
@@ -33,9 +36,10 @@ export default defineComponent({
   name: "DetailsModal",
   props: {
     title: { type: String, default: "Modal", required: true },
+    distance: { type: Number, required: true },
     gasStation: { type: Object as PropType<GasStation>, required: true },
   },
-  components: { IonContent, IonHeader, IonTitle, IonToolbar },
+  components: { IonPage, IonContent, IonHeader, IonTitle, IonToolbar },
   setup(props) {
     const canStartFueling = ref(false);
     const { CloudSDK } = Plugins;

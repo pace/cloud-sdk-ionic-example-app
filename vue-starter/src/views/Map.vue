@@ -64,11 +64,21 @@ export default {
 
       if (!gasStation) return;
 
+      if (!mapCenter.value) return;
+
+      const center = LngLat.convert(mapCenter.value);
+
+      const distance = haversineDistance(
+        [center.lng, center.lat],
+        gasStation.coordinates[0]
+      );
+
       const modal = await modalController.create({
         component: DetailsModal,
         componentProps: {
           title: gasStation.name,
           gasStation,
+          distance,
         },
       });
 

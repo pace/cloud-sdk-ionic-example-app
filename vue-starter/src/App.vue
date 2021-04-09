@@ -7,6 +7,7 @@
 <script lang="ts">
 import { Plugins } from "@capacitor/core";
 import { IonApp, IonRouterOutlet } from "@ionic/vue";
+import { Environment } from "cloud-sdk-capacitor-plugin";
 import { defineComponent, onMounted } from "vue";
 
 export default defineComponent({
@@ -21,6 +22,7 @@ export default defineComponent({
     onMounted(() => {
       const config = {
         apiKey: process.env.VUE_APP_CLOUD_SDK_API_KEY,
+        environment: Environment.SANDBOX,
       };
 
       try {
