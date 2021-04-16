@@ -44,11 +44,12 @@ export default {
 
     const SOURCE_ID = "gasStations";
 
-    const defaultCenter: LngLatLike = [5.886479, 51.000626];
+    // Karlsruhe, Germany
+    const defaultCenter: LngLatLike = [8.403653, 49.006889];
 
-    function createMarker(name: string, distance: number): HTMLDivElement {
+    function createMarker(name: string): HTMLDivElement {
       const el = document.createElement("div");
-      const label = `${name} - ${distance.toFixed()}km`;
+      const label = name;
 
       el.classList.add("marker");
 
@@ -70,7 +71,7 @@ export default {
 
       const distance = haversineDistance(
         [center.lng, center.lat],
-        gasStation.coordinates[0]
+        gasStation.coordinates
       );
 
       const modal = await modalController.create({
@@ -113,12 +114,7 @@ export default {
           markers.delete(id);
         }
 
-        const distance = haversineDistance(
-          [center.lng, center.lat],
-          [coords.lng, coords.lat]
-        );
-
-        const el = createMarker(name, distance);
+        const el = createMarker(name);
 
         marker = new mapboxgl.Marker({
           element: el,
@@ -167,10 +163,7 @@ export default {
           },
           geometry: {
             type: "Point",
-            coordinates: [
-              gasStation.coordinates[0][0],
-              gasStation.coordinates[0][1],
-            ],
+            coordinates: [gasStation.coordinates[0], gasStation.coordinates[1]],
           },
         });
       });
@@ -184,10 +177,6 @@ export default {
         mapCenter.value = [response.coords.longitude, response.coords.latitude];
       } catch (err) {
         console.error(err);
-
-        if (!isPlatform("desktop")) return;
-
-        mapCenter.value = defaultCenter;
       }
     }
 
@@ -241,18 +230,12 @@ export default {
           coordinate: [coords.lng, coords.lat],
 
           // @todo make radius dependent on current bounding box
-          radius: 25000,
+          radius: 10000,
         });
 
         gasStations.value = [...results];
       } catch (err) {
         console.error(err);
-
-        if (!isPlatform("desktop")) return;
-
-        // @note only for demonstration purposes
-        const results = mockGasStations([coords.lng, coords.lat]);
-        gasStations.value = [...results];
       } finally {
         loading.dismiss();
       }

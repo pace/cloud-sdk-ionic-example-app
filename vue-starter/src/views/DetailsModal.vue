@@ -7,11 +7,20 @@
     </ion-header>
     <ion-content class="ion-padding">
       <div>
-        {{ `${distance.toFixed()}km` }}
+        Address: {{ gasStation.address.street }}
+        {{ gasStation.address.houseNumber }}, {{ gasStation.address.zipCode }}
+        {{ gasStation.address.city }}
+        <br />
 
-        <div>
-          <ion-button :disabled="!canStartFueling" v-on:click="startFueling">
-            Start fueling
+        Distance: {{ `${distance.toFixed(1)}km` }}
+
+        <div class="ion-padding-top">
+          <ion-button
+            :disabled="!canStartFueling"
+            v-on:click="startFueling"
+            expand="block"
+          >
+            Start Fueling
           </ion-button>
         </div>
       </div>
@@ -41,7 +50,8 @@ export default defineComponent({
   },
   components: { IonPage, IonContent, IonHeader, IonTitle, IonToolbar },
   setup(props) {
-    const canStartFueling = ref(false);
+    // @todo should be false by default, and be checked via the `checkGasStationInRange` method
+    const canStartFueling = ref(true);
     const { CloudSDK } = Plugins;
 
     /**

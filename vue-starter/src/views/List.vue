@@ -34,16 +34,10 @@
           </ion-label>
 
           <ion-label slot="end" class="ion-text-end">{{
-            `${gasStation.distance.toFixed()}km`
+            `${gasStation.distance.toFixed(1)}km`
           }}</ion-label>
         </ion-item>
       </ion-list>
-
-      <p class="ion-padding-start ion-padding-end">
-        <ion-button v-on:click="startFueling()" expand="block" fill="outline"
-          >Plugin.startFuelingApp</ion-button
-        >
-      </p>
     </ion-content>
   </ion-page>
 </template>
@@ -60,13 +54,11 @@ import {
   IonLabel,
   IonButton,
   modalController,
-  isPlatform,
 } from "@ionic/vue";
 import { Plugins } from "@capacitor/core";
 import { onMounted, ref, watch } from "vue";
 import DetailsModal from "./DetailsModal.vue";
 import { GasStation } from "cloud-sdk-capacitor-plugin";
-import { mockGasStations } from "../mocks";
 import { haversineDistance } from "../utils/coordinates";
 
 /**
@@ -79,7 +71,7 @@ const withDistanceSorted = (
   results
     .map((result) => ({
       ...result,
-      distance: haversineDistance(userPosition, result.coordinates[0]),
+      distance: haversineDistance(userPosition, result.coordinates),
     }))
     .sort((a, b) => a.distance - b.distance);
 
@@ -104,18 +96,12 @@ export default {
 
     const gasStations = ref<GasStation[]>([]);
 
-    function startFueling() {
-      CloudSDK.startFuelingApp({
-        poiId: "00281251-54cb-471b-bb1a-689604df2bf8",
-      });
-    }
-
     async function openDetailsModal(gasStation: GasStation) {
       if (!userPosition.value) return;
 
       const distance = haversineDistance(
         userPosition.value,
-        gasStation.coordinates[0]
+        gasStation.coordinates
       );
 
       const modal = await modalController.create({
@@ -139,12 +125,6 @@ export default {
         ];
       } catch (err) {
         console.error(err);
-
-        // @note only for demonstration purposes
-        if (!isPlatform("desktop")) return;
-
-        const defaultCenter: [number, number] = [5.886479, 51.000626];
-        userPosition.value = defaultCenter;
       }
     }
 
@@ -152,21 +132,14 @@ export default {
       if (!value) return;
 
       try {
-        const { results } = await CloudSDK.getNearbyGasStations({
+        const response = await CloudSDK.getNearbyGasStations({
           coordinate: [value[0], value[1]],
-          radius: 25000,
+          radius: 10000,
         });
 
-        gasStations.value = withDistanceSorted(results, value);
+        gasStations.value = withDistanceSorted(response.results, value);
       } catch (err) {
         console.error(err);
-
-        // @note since the plugin does not have a web implementation results are mocked
-        if (!isPlatform("desktop")) return;
-
-        const results = mockGasStations([value[0], value[1]]);
-
-        gasStations.value = withDistanceSorted(results, value);
       }
     });
 
@@ -178,7 +151,6 @@ export default {
       getUserPosition,
       gasStations,
       openDetailsModal,
-      startFueling,
     };
   },
 };

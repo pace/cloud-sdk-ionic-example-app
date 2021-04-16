@@ -24,7 +24,7 @@ const mockGasStations = (
       street: faker.address.streetName(),
       houseNumber: `${faker.datatype.number(100)}`,
     },
-    coordinates: [nearbyCoordinate(coordinate)],
+    coordinates: nearbyCoordinate(coordinate),
     isConnectedFuelingAvailable: true,
     lastUpdated: new Date(),
   }));
