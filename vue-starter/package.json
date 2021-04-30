@@ -15,7 +15,7 @@
     "@capacitor/ios": "^2.4.7",
     "@ionic/vue": "^5.4.0",
     "@ionic/vue-router": "^5.4.0",
-    "cloud-sdk-capacitor-plugin": "^0.0.2",
+    "cloud-sdk-capacitor-plugin": "^0.0.3",
     "core-js": "^3.6.5",
     "faker": "^5.5.2",
     "mapbox-gl": "^2.2.0",
