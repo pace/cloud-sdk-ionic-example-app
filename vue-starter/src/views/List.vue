@@ -118,7 +118,10 @@ export default {
 
     async function getUserPosition() {
       try {
-        const response = await Geolocation.getCurrentPosition();
+        const response = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+        });
+
         userPosition.value = [
           response.coords.longitude,
           response.coords.latitude,

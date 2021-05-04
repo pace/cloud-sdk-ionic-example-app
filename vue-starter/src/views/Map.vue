@@ -173,7 +173,10 @@ export default {
 
     async function getUserPosition() {
       try {
-        const response = await Geolocation.getCurrentPosition();
+        const response = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+        });
+
         mapCenter.value = [response.coords.longitude, response.coords.latitude];
       } catch (err) {
         console.error(err);
