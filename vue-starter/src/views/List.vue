@@ -29,7 +29,9 @@
             <h2>{{ gasStation.name }}</h2>
             <p>
               {{ gasStation.address.street }}
-              {{ gasStation.address.houseNumber }}
+              {{ gasStation.address.houseNumber }},
+              {{ gasStation.address.zipCode }}
+              {{ gasStation.address.city }}
             </p>
           </ion-label>
 

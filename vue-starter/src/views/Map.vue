@@ -12,14 +12,12 @@ import {
   IonContent,
   loadingController,
   modalController,
-  isPlatform,
 } from "@ionic/vue";
 import { onMounted, reactive, ref, watch } from "vue";
 import mapboxgl, { GeoJSONSource, LngLat, LngLatLike } from "mapbox-gl";
 import { GasStation } from "cloud-sdk-capacitor-plugin";
 import { Plugins } from "@capacitor/core";
 import DetailsModal from "./DetailsModal.vue";
-import { mockGasStations } from "../mocks";
 import { haversineDistance } from "../utils/coordinates";
 
 interface FeatureProps {
@@ -93,7 +91,6 @@ export default {
       if (!features.length) return;
 
       const addedMarkers: Map<string, mapboxgl.Marker> = new Map();
-      const center = LngLat.convert(mapCenter.value);
 
       features.forEach((feature) => {
         const { properties, geometry } = feature;

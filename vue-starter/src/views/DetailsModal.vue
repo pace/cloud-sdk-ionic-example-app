@@ -7,12 +7,91 @@
     </ion-header>
     <ion-content class="ion-padding">
       <div>
-        Address: {{ gasStation.address.street }}
-        {{ gasStation.address.houseNumber }}, {{ gasStation.address.zipCode }}
-        {{ gasStation.address.city }}
-        <br />
+        <ion-grid>
+          <ion-row>
+            <ion-col>
+              <h6 class="ion-no-margin">Address</h6>
+              <div class="ion-margin-bottom">
+                {{ gasStation.address.street }}<br />
+                {{ gasStation.address.houseNumber }},
+                {{ gasStation.address.zipCode }}
+                {{ gasStation.address.city }}
+              </div>
+            </ion-col>
+            <ion-col>
+              <h6 class="ion-no-margin ion-text-right">Distance</h6>
+              <div class="ion-margin-bottom ion-text-right">
+                {{ `${distance.toFixed(1)}km` }}
+              </div>
+            </ion-col>
+          </ion-row>
 
-        Distance: {{ `${distance.toFixed(1)}km` }}
+          <ion-row>
+            <ion-col>
+              <h6 class="ion-no-margin">Opening Hours</h6>
+
+              <table
+                v-if="gasStation.openingHours.length"
+                class="opening-hours-table ion-margin-bottom"
+              >
+                <tbody>
+                  <tr
+                    v-for="dayHours in gasStation.openingHours"
+                    v-bind:key="dayHours.day"
+                  >
+                    <td>
+                      <span class="ion-text-capitalize">{{
+                        dayHours.day
+                      }}</span>
+                    </td>
+                    <td>
+                      <div
+                        v-for="(hours, index) in dayHours.hours"
+                        v-bind:key="index"
+                        class="ion-text-right"
+                      >
+                        {{ hours[0] }} - {{ hours[1] }}
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div v-else class="ion-margin-bottom">Not available</div>
+            </ion-col>
+          </ion-row>
+
+          <ion-row>
+            <ion-col>
+              <h6 class="ion-no-margin">Fuel Prices</h6>
+
+              <table
+                v-if="gasStation.fuelPrices.length"
+                class="opening-hours-table ion-margin-bottom"
+              >
+                <tbody>
+                  <tr
+                    v-for="fuelPrice in gasStation.fuelPrices"
+                    v-bind:key="fuelPrice.productName"
+                  >
+                    <td>
+                      <span class="ion-text-capitalize">{{
+                        fuelPrice.productName
+                      }}</span>
+                    </td>
+                    <td>
+                      <div class="ion-text-right">
+                        {{ fuelPrice.currency }} {{ fuelPrice.price }}/{{
+                          fuelPrice.unit
+                        }}
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <div v-else class="ion-margin-bottom">Not available</div>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
 
         <div class="ion-padding-top">
           <ion-button
@@ -28,6 +107,13 @@
   </ion-page>
 </template>
 
+<style scoped>
+.opening-hours-table {
+  width: 100%;
+  table-layout: fixed;
+}
+</style>
+
 <script lang="ts">
 import { defineComponent, ref, onMounted, PropType } from "vue";
 import {
@@ -36,6 +122,7 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
+  IonButton,
   alertController,
 } from "@ionic/vue";
 import { Plugins } from "@capacitor/core";
@@ -48,10 +135,16 @@ export default defineComponent({
     distance: { type: Number, required: true },
     gasStation: { type: Object as PropType<GasStation>, required: true },
   },
-  components: { IonPage, IonContent, IonHeader, IonTitle, IonToolbar },
+  components: {
+    IonPage,
+    IonContent,
+    IonHeader,
+    IonTitle,
+    IonToolbar,
+    IonButton,
+  },
   setup(props) {
-    // @todo should be false by default, and be checked via the `checkGasStationInRange` method
-    const canStartFueling = ref(true);
+    const canStartFueling = ref(false);
     const { CloudSDK } = Plugins;
 
     /**
@@ -84,6 +177,8 @@ export default defineComponent({
 
     onMounted(() => {
       checkGasStationInRange();
+
+      console.log(props.gasStation);
     });
 
     return {
