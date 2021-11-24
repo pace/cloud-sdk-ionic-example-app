@@ -2,9 +2,8 @@
 
 ## Installation
 
-First, make a copy of `.env.example`, rename it to `.env`, and supply your own PACE and Mapbox API keys.
-
-Then, run the following commands:
+1. Make a copy of `.env.example`, rename it to `.env`, and supply your own PACE and Mapbox API keys.
+2. Run the following commands:
 
 ```
 npm install
@@ -15,6 +14,22 @@ npx cap sync
 To open the app in XCode, run: `npx cap open ios`.
 
 To open the app in Android Studio, run: `npx cap open android`.
+
+## Local Installation
+
+1. Clone the [Capacitor plugin project](https://github.com/pace/cloud-sdk-capacitor-plugin) into the **same** directory as the `cloud-sdk-ionic-example-app` repository. Your file structure should look something like this:
+```
+my_repositories  
+└───cloud-sdk-ionic-example-app
+│   └───vue-starter
+│       │   ...
+│   
+└───cloud-sdk-capacitor-plugin
+    │   ...
+```
+2. Make a copy of `.env.example`, rename it to `.env`, and supply your own PACE and Mapbox API keys.
+3. Go to `/scripts`
+4. Run `sh setup_locally android` or `sh setup_locally ios` to install the capacitor plugin locally and open the `vue-starter` project for the desired platform.
 
 ## After you made changes to the example app
 
