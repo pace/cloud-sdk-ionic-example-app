@@ -145,15 +145,33 @@ export default defineComponent({
   },
   setup(props) {
     const canStartFueling = ref(false);
-    const { CloudSDK } = Plugins;
+    const { CloudSDK, Geolocation } = Plugins;
+
+    async function getUserPosition(): Promise<[number, number]> {
+      try {
+        const response = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+        });
+
+        return [
+          response.coords.longitude,
+          response.coords.latitude,
+        ];
+      } catch (err) {
+        console.error(err);
+        throw new Error("Couldn't retrieve location");
+      }
+    }
 
     /**
      * Checks if the gasStation is nearby enough to initiate the fueling flow
      */
     async function checkGasStationInRange() {
       try {
+        const userPosition = await getUserPosition()
         const { result } = await CloudSDK.isPoiInRange({
           poiId: props.gasStation.id,
+          coordinate: [userPosition[0], userPosition[1]],
         });
 
         canStartFueling.value = result;
@@ -182,6 +200,7 @@ export default defineComponent({
     });
 
     return {
+      getUserPosition,
       canStartFueling,
       startFueling,
     };
