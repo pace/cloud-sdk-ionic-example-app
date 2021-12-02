@@ -7,9 +7,8 @@
 <script lang="ts">
 import { Plugins } from "@capacitor/core";
 import { IonApp, IonRouterOutlet } from "@ionic/vue";
-import { Environment } from "cloud-sdk-capacitor-plugin";
+import {Environment, AuthenticationMode} from "cloud-sdk-capacitor-plugin";
 import { defineComponent, onMounted } from "vue";
-
 export default defineComponent({
   name: "App",
   components: {
@@ -23,10 +22,22 @@ export default defineComponent({
       const config = {
         apiKey: process.env.VUE_APP_CLOUD_SDK_API_KEY,
         environment: Environment.SANDBOX,
+        authenticationMode: AuthenticationMode.NATIVE,
+        isRedirectSchemeCheckEnabled: false,
+        enableLogging: true,
       };
 
       try {
         CloudSDK.setup(config);
+        const token = '';
+        CloudSDK.addListener('TOKEN_INVALID', (data: any) => {
+          const notificationData = JSON.parse(data.result)
+          const ID = notificationData.id;
+
+          console.log(ID);
+
+          CloudSDK.respondToEvent({name: 'TOKEN_INVALID', id: ID, value: token})
+        });
       } catch (err) {
         console.error(err);
       }

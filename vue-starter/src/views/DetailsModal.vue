@@ -31,29 +31,29 @@
               <h6 class="ion-no-margin">Opening Hours</h6>
 
               <table
-                v-if="gasStation.openingHours.length"
-                class="opening-hours-table ion-margin-bottom"
+                  v-if="1===2 && gasStation.openingHours.length"
+                  class="opening-hours-table ion-margin-bottom"
               >
                 <tbody>
-                  <tr
+                <tr
                     v-for="dayHours in gasStation.openingHours"
                     v-bind:key="dayHours.day"
-                  >
-                    <td>
+                >
+                  <td>
                       <span class="ion-text-capitalize">{{
-                        dayHours.day
-                      }}</span>
-                    </td>
-                    <td>
-                      <div
+                          dayHours.day
+                        }}</span>
+                  </td>
+                  <td>
+                    <div
                         v-for="(hours, index) in dayHours.hours"
                         v-bind:key="index"
                         class="ion-text-right"
-                      >
-                        {{ hours[0] }} - {{ hours[1] }}
-                      </div>
-                    </td>
-                  </tr>
+                    >
+                      {{ hours[0] }} - {{ hours[1] }}
+                    </div>
+                  </td>
+                </tr>
                 </tbody>
               </table>
               <div v-else class="ion-margin-bottom">Not available</div>
@@ -65,27 +65,27 @@
               <h6 class="ion-no-margin">Fuel Prices</h6>
 
               <table
-                v-if="gasStation.fuelPrices.length"
-                class="opening-hours-table ion-margin-bottom"
+                  v-if="1===2 && gasStation.fuelPrices.length"
+                  class="opening-hours-table ion-margin-bottom"
               >
                 <tbody>
-                  <tr
+                <tr
                     v-for="fuelPrice in gasStation.fuelPrices"
                     v-bind:key="fuelPrice.productName"
-                  >
-                    <td>
+                >
+                  <td>
                       <span class="ion-text-capitalize">{{
-                        fuelPrice.productName
-                      }}</span>
-                    </td>
-                    <td>
-                      <div class="ion-text-right">
-                        {{ fuelPrice.currency }} {{ fuelPrice.price }}/{{
-                          fuelPrice.unit
-                        }}
-                      </div>
-                    </td>
-                  </tr>
+                          fuelPrice.productName
+                        }}</span>
+                  </td>
+                  <td>
+                    <div class="ion-text-right">
+                      {{ fuelPrice.currency }} {{ fuelPrice.price }}/{{
+                        fuelPrice.unit
+                      }}
+                    </div>
+                  </td>
+                </tr>
                 </tbody>
               </table>
               <div v-else class="ion-margin-bottom">Not available</div>
@@ -95,9 +95,9 @@
 
         <div class="ion-padding-top">
           <ion-button
-            :disabled="!canStartFueling"
-            v-on:click="startFueling"
-            expand="block"
+              :disabled="!canStartFueling"
+              v-on:click="startFueling"
+              expand="block"
           >
             Start Fueling
           </ion-button>
@@ -126,7 +126,7 @@ import {
   alertController,
 } from "@ionic/vue";
 import { Plugins } from "@capacitor/core";
-import { GasStation } from "cloud-sdk-capacitor-plugin";
+import { GasStation, PresetUrl } from "cloud-sdk-capacitor-plugin";
 
 export default defineComponent({
   name: "DetailsModal",
@@ -144,7 +144,7 @@ export default defineComponent({
     IonButton,
   },
   setup(props) {
-    const canStartFueling = ref(false);
+    const canStartFueling = ref(true);
     const { CloudSDK, Geolocation } = Plugins;
 
     async function getUserPosition(): Promise<[number, number]> {
@@ -168,13 +168,13 @@ export default defineComponent({
      */
     async function checkGasStationInRange() {
       try {
-        const userPosition = await getUserPosition()
-        const { result } = await CloudSDK.isPoiInRange({
-          poiId: props.gasStation.id,
-          coordinate: [userPosition[0], userPosition[1]],
-        });
-
-        canStartFueling.value = result;
+        // const userPosition = await getUserPosition()
+        // const { result } = await CloudSDK.isPoiInRange({
+        //   poiId: props.gasStation.id,
+        //   coordinate: [userPosition[0], userPosition[1]],
+        // });
+        //
+        // canStartFueling.value = result;
       } catch (err) {
         console.error(err);
       }
@@ -190,11 +190,18 @@ export default defineComponent({
         return alert.present();
       }
 
-      CloudSDK.startFuelingApp({ poiId: props.gasStation.id });
+      try {
+        const result = await CloudSDK.startFuelingApp({ poiId: props.gasStation.id });
+        console.log(result)
+      } catch (err) {
+        console.error(err);
+      }
+
+      // CloudSDK.startFuelingApp({ poiId: props.gasStation.id });
     }
 
     onMounted(() => {
-      checkGasStationInRange();
+      // checkGasStationInRange();
 
       console.log(props.gasStation);
     });
