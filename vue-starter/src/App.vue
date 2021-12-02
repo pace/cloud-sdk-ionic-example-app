@@ -31,9 +31,7 @@ export default defineComponent({
         CloudSDK.setup(config);
         const token = '';
         CloudSDK.addListener('TOKEN_INVALID', (data: any) => {
-          const notificationData = JSON.parse(data.result)
-          const ID = notificationData.id;
-
+          const ID = data.id;
           console.log(ID);
 
           CloudSDK.respondToEvent({name: 'TOKEN_INVALID', id: ID, value: token})
